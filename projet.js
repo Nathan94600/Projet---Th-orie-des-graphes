@@ -4,14 +4,15 @@
  * @param {string | number} sommetDepart
  */
 function DFS(sommets, sommetDepart) {
-  const etat = Object.fromEntries(Object.keys(sommets).map(k => [k, false]));
-  const pere = Object.fromEntries(Object.keys(sommets).map(k => [k, null]));
+  const etat = Object.fromEntries(Object.keys(sommets).map(k => [k, false])); // Permet de garder en memoire les sommets deja visites
+  const pere = Object.fromEntries(Object.keys(sommets).map(k => [k, null])); // Permet de garder en memoire le pere de chaque sommet
 
   function name(sommet) {
     etat[sommet] = true;
   
     const successeurs = sommets[sommet];
-  
+    
+    // On trie les successeurs pour avoir un ordre de visite cohérent
     for (const successeur of successeurs.sort()) {
       if (etat[successeur] === false) {
         pere[successeur] = sommet
@@ -32,27 +33,28 @@ function DFS(sommets, sommetDepart) {
  * @param {string | number} sommetDepart
  */
 function BFS(sommets, sommetDepart) {
-  const etat = Object.fromEntries(Object.keys(sommets).map(k => [k, false]));
-  const pere = Object.fromEntries(Object.keys(sommets).map(k => [k, null]));
-  const niveau = Object.fromEntries(Object.keys(sommets).map(k => [k, null]));
+  const etat = Object.fromEntries(Object.keys(sommets).map(k => [k, false])); // Permet de garder en memoire les sommets deja visites
+  const pere = Object.fromEntries(Object.keys(sommets).map(k => [k, null])); // Permet de garder en memoire le pere de chaque sommet
+  const niveau = Object.fromEntries(Object.keys(sommets).map(k => [k, null])); // Permet de garder en memoire le niveau de chaque sommet
 
   niveau[sommetDepart] = 0
   etat[sommetDepart] = true;
 
-  const liste = [sommetDepart];
+  const liste = [sommetDepart]; // Permet de garder en memoire les sommets a visiter
 
   while (liste.length !== 0) {
-    const sommet = liste.shift();
+    const sommet = liste.shift(); // Retire le premier element de la liste
 
-    const successeurs = sommets[sommet];
+    const successeurs = sommets[sommet]; // Obtient les successeurs du sommet actuel
   
+    // On trie les successeurs pour avoir un ordre de visite cohérent
     for (const successeur of successeurs.sort()) {
       if (etat[successeur] === false) {
-        etat[successeur] = true;
+        etat[successeur] = true; // Marque le successeur comme visite
         pere[successeur] = sommet;
         niveau[successeur] = niveau[sommet] + 1;
         
-        liste.push(successeur);
+        liste.push(successeur); // Ajoute le successeur a la liste
       }
     }
   }
@@ -66,32 +68,32 @@ function BFS(sommets, sommetDepart) {
  * @param {string | number} sommetDepart
 */
 function dijkstra(sommets, sommetDepart) {
-  const liste = Object.fromEntries(Object.keys(sommets).map(k => [k, {pere: null, poids: Infinity}]));
-  const queue = [sommetDepart];
-  const vu = new Set();
+  const liste = Object.fromEntries(Object.keys(sommets).map(k => [k, {pere: null, poids: Infinity}])); // Permet de garder en memoire le pere et le poids de chaque sommet
+  const queue = [sommetDepart]; // Permet de garder en memoire les sommets a visiter
+  const vu = new Set(); // Permet de garder en memoire les sommets deja visites
 
-  liste[sommetDepart].poids = 0;
+  liste[sommetDepart].poids = 0; // Definit le poids du sommet de depart a 0
 
   while (queue.length !== 0) {
-    const sommetName = queue.shift();
-    const sommet = liste[sommetName];
-    const successeurs = sommets[sommetName]    
+    const sommetName = queue.shift(); // Retire le premier element de la liste
+    const sommet = liste[sommetName]; // Obtient les informations du sommet actuel
+    const successeurs = sommets[sommetName] // Obtient les successeurs du sommet actuel    
 
-    for (const successeur of successeurs) {
+    for (const successeur of successeurs) { // Pour chaque successeur
       const successeurName = successeur.sommet;  
       const successeurListe = liste[successeurName];
 
-      if ((successeur.poids + sommet.poids) < successeurListe.poids) {
-        successeurListe.poids = successeur.poids + sommet.poids;
-        successeurListe.pere = sommetName;
+      if ((successeur.poids + sommet.poids) < successeurListe.poids) { // Si le poids du successeur est superieur au poids actuel
+        successeurListe.poids = successeur.poids + sommet.poids; // Met a jour le poids du successeur
+        successeurListe.pere = sommetName; // Met a jour le pere du successeur
       }
     }
 
-    vu.add(sommetName)
+    vu.add(sommetName) // Ajoute le sommet actuel a l'ensemble des sommets visites
 
-    const next = successeurs.filter(({sommet}) => !vu.has(sommet)).map(({sommet}) => ({sommet, ...liste[sommet]})).sort((a, b) => a.poids - b.poids)[0];
+    const next = successeurs.filter(({sommet}) => !vu.has(sommet)).map(({sommet}) => ({sommet, ...liste[sommet]})).sort((a, b) => a.poids - b.poids)[0]; // Obtient le prochain sommet a visiter
 
-    if (next) queue.push(next.sommet);
+    if (next) queue.push(next.sommet); // Ajoute le prochain sommet a la liste
   }
 
   return liste;
@@ -164,6 +166,8 @@ console.log(
   dijkstra(grapheTestAvecPoids, "S1")
 );
 
+// Reponses:
+// 1. Modélisation du graphe des villes
 const graph = {
   Rennes: [
     {sommet: "Caen", poids: 75},
@@ -230,8 +234,31 @@ const graph = {
 const graphSansPoids = Object.fromEntries(Object.entries(graph).map(([k, v]) => [k, v.map(({sommet}) => sommet)]));
 
 // Verifier les résultats
-console.log("DFS", DFS(graphSansPoids, "Rennes"));
-console.log("BFS", BFS(graphSansPoids, "Rennes"));
+// console.log("DFS", DFS(graphSansPoids, "Rennes"));
+// console.log("BFS", BFS(graphSansPoids, "Rennes"));
 
 
-console.log("Dijkstra", dijkstra(graph, "Bordeaux"));
+// console.log("Dijkstra", dijkstra(graph, "Bordeaux"));
+
+
+// 2. Tester BFS et DFS avec le graphe des villes
+console.log('--- Parcours BFS (en largeur) depuis Rennes ---');
+console.log(BFS(graphSansPoids, 'Rennes'));
+console.log('--- Parcours DFS (en profondeur) depuis Rennes ---');
+console.log(DFS(graphSansPoids, 'Rennes'));
+
+// 3. Tester Dijkstra avec le graphe des villes
+console.log('--- Plus courts chemins (Dijkstra) depuis Rennes ---');
+console.log(dijkstra(graph, 'Rennes'));
+
+// 4. Un test BFS/DFS avec un autre sommet de départ
+console.log('--- Parcours BFS (en largeur) depuis Lyon ---');
+console.log(BFS(graphSansPoids, 'Lyon'));
+console.log('--- Parcours DFS (en profondeur) depuis Lyon ---');
+console.log(DFS(graphSansPoids, 'Lyon'));
+
+// 5. Un test Dijkstra avec un autre sommet de départ 
+console.log('--- Plus courts chemins (Dijkstra) depuis Lyon ---');
+console.log(dijkstra(graph, 'Lyon'));
+console.log('--- Plus courts chemins (Dijkstra) depuis Bordeaux ---');
+console.log(dijkstra(graph, 'Bordeaux'));
