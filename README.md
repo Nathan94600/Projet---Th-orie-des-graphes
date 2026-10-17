@@ -2,7 +2,7 @@
 **EFREI Paris** — Réseau routier pondéré non orienté (10 villes, 20 routes)
 
 ---
-![Projet](image.png)
+<img width="1193" height="1110" alt="Image" src="https://github.com/user-attachments/assets/1d435282-85b7-4925-b1c1-cef7972ed1c4" />
 ## 1. Comment lancer le projet
 
 Le projet ne nécessite aucune installation de dépendances externes (du JavaScript natif pur).
