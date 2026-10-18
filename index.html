@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualisation du graphe</title>
+    <script src="projet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen py-8 px-4">
+    <div class="max-w-6xl mx-auto space-y-5">
+        <!-- En-tête -->
+        <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+                <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
+                    <span class="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-blue-600 text-white text-lg">🕸️</span>
+                    Théorie des Graphes (ALMF51)
+                </h1>
+                <p class="text-sm text-slate-600 mt-1">
+                    Réseau routier français : <strong>10 villes</strong>, <strong>20 routes pondérées</strong> — <strong>BFS</strong>, <strong>DFS</strong> et <strong>Dijkstra</strong>.
+                </p>
+            </div>
+        </header>
+
+        <!-- Scénarios officiels (Accès 1 clic) -->
+        <div class="bg-gradient-to-r from-slate-900 to-slate-800 text-white p-4 rounded-xl shadow-md">
+            <div class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2.5">Scénarios du sujet (clic rapide) :</div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                <button type="button" id="btn-sc-dijkstra" class="flex items-center justify-between px-3.5 py-2 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40 text-amber-200 text-xs font-semibold transition cursor-pointer">
+                    <span>1. Dijkstra : Bordeaux ➔ Lille</span>
+                    <span class="bg-amber-500 text-slate-950 px-1.5 py-0.5 rounded text-[11px] font-bold">220 km</span>
+                </button>
+                <button type="button" id="btn-sc-bfs" class="flex items-center justify-between px-3.5 py-2 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-200 text-xs font-semibold transition cursor-pointer">
+                    <span>2. BFS : Depuis Rennes</span>
+                    <span class="bg-emerald-500 text-slate-950 px-1.5 py-0.5 rounded text-[11px] font-bold">Largeur</span>
+                </button>
+                <button type="button" id="btn-sc-dfs" class="flex items-center justify-between px-3.5 py-2 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 border border-purple-400/40 text-purple-200 text-xs font-semibold transition cursor-pointer">
+                    <span>3. DFS : Depuis Rennes</span>
+                    <span class="bg-purple-500 text-white px-1.5 py-0.5 rounded text-[11px] font-bold">Profondeur</span>
+                </button>
+                <button type="button" id="btn-sc-lyon" class="flex items-center justify-between px-3.5 py-2 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 border border-sky-400/40 text-sky-200 text-xs font-semibold transition cursor-pointer">
+                    <span>4. Test sup. : Depuis Lyon</span>
+                    <span class="bg-sky-500 text-slate-950 px-1.5 py-0.5 rounded text-[11px] font-bold">Test #2</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Contrôles -->
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 grid grid-cols-1 md:grid-cols-12 gap-5 items-end">
+            <div class="md:col-span-4">
+                <label for="select-algo" class="block text-sm font-semibold text-slate-700 mb-1.5">Algorithme</label>
+                <select id="select-algo" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg p-2.5 font-medium cursor-pointer">
+                    <option value="BFS">BFS (Parcours en Largeur)</option>
+                    <option value="DFS">DFS (Parcours en Profondeur)</option>
+                    <option value="Dijkstra" selected>Dijkstra (Plus Court Chemin)</option>
+                </select>
+            </div>
+            <div class="md:col-span-4">
+                <label for="select-depart" class="block text-sm font-semibold text-emerald-700 mb-1.5">Ville de départ</label>
+                <select id="select-depart" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg p-2.5 font-medium cursor-pointer"></select>
+            </div>
+            <div class="md:col-span-4" id="container-arrivee">
+                <label for="select-arrivee" class="block text-sm font-semibold text-rose-700 mb-1.5">Ville d'arrivée (Dijkstra)</label>
+                <select id="select-arrivee" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg p-2.5 font-medium cursor-pointer"></select>
+            </div>
+        </div>
+
+        <!-- Astuce interactive -->
+        <div class="flex items-center justify-between text-xs text-slate-500 px-1">
+            <span> <strong>Clic gauche</strong> = Définir le Départ. <strong>Clic droit / Maj+Clic</strong> = Définir l'Arrivée.</span>
+        </div>
+
+        <!-- Canvas & Résultats -->
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col items-center gap-4">
+            <canvas id="graphCanvas" width="1000" height="650" class="rounded-lg bg-slate-50 border border-slate-200"></canvas>
+            <div id="resultats-algo" class="w-full max-w-5xl p-5 rounded-lg bg-slate-50 border border-slate-200 text-sm"></div>
+        </div>
+
+    </div>
+
+    <script>
+        const canvas = document.getElementById('graphCanvas');
+        const ctx = canvas.getContext('2d');
+        const selectAlgo = document.getElementById('select-algo');
+        const selectDepart = document.getElementById('select-depart');
+        const selectArrivee = document.getElementById('select-arrivee');
+        const containerArrivee = document.getElementById('container-arrivee');
+        const resultatsDiv = document.getElementById('resultats-algo');
+
+        // Coordonnées des 10 villes
+        const positions = {
+            'Rennes': { x: 180, y: 220 },
+            'Caen': { x: 360, y: 150 },
+            'Nantes': { x: 230, y: 360 },
+            'Bordeaux': { x: 200, y: 530 },
+            'Paris': { x: 420, y: 280 },
+            'Lille': { x: 640, y: 150 },
+            'Dijon': { x: 540, y: 380 },
+            'Lyon': { x: 550, y: 530 },
+            'Nancy': { x: 770, y: 300 },
+            'Grenoble': { x: 740, y: 530 }
+        };
+        const villes = Object.keys(positions).sort();
+
+        // 20 routes pondérées déduites de graph (évite toute duplication)
+        const aretes = [];
+        for (const [u, voisins] of Object.entries(graph)) {
+            for (const { sommet: v, poids } of voisins) {
+                if (u < v) aretes.push([u, v, poids]);
+            }
+        }
+        const getEdgeKey = (u, v) => u < v ? `${u}--${v}` : `${v}--${u}`;
+
+        // Remplir les menus déroulants
+        villes.forEach(v => {
+            selectDepart.add(new Option(v, v, false, v === 'Bordeaux'));
+            selectArrivee.add(new Option(v, v, false, v === 'Lille'));
+        });
+
+        // Dessin unique du graphe
+        function dessinerGraphe({ depart, arrivee, activeEdges = new Map(), activeNodes = new Map() }) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Arêtes (arrière-plan en pointillés, actives en gras)
+            aretes.forEach(([u, v, w]) => {
+                const key = getEdgeKey(u, v);
+                const active = activeEdges.get(key);
+                const pU = positions[u], pV = positions[v];
+
+                ctx.beginPath();
+                ctx.moveTo(pU.x, pU.y);
+                ctx.lineTo(pV.x, pV.y);
+                ctx.strokeStyle = active ? active.color : '#e2e8f0';
+                ctx.lineWidth = active ? active.width : 1.5;
+                ctx.setLineDash(active ? [] : [4, 4]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // Badge de distance
+                const midX = (pU.x + pV.x) / 2, midY = (pU.y + pV.y) / 2;
+                ctx.fillStyle = active ? active.weightBg : '#f8fafc';
+                ctx.beginPath(); ctx.arc(midX, midY, 12, 0, Math.PI * 2); ctx.fill();
+                ctx.strokeStyle = active ? active.color : '#cbd5e1';
+                ctx.lineWidth = active ? 1.5 : 1; ctx.stroke();
+                ctx.fillStyle = active ? active.weightColor : '#94a3b8';
+                ctx.font = active ? 'bold 11px sans-serif' : '10px sans-serif';
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText(w, midX, midY);
+            });
+
+            // Sommets
+            Object.entries(positions).forEach(([nom, pos]) => {
+                const isDep = (nom === depart), isArr = (nom === arrivee && selectAlgo.value === 'Dijkstra');
+                const active = activeNodes.get(nom);
+                const r = (isDep || isArr) ? 26 : 22;
+
+                if (isDep || isArr || active?.ring) {
+                    ctx.beginPath(); ctx.arc(pos.x, pos.y, r + 4, 0, Math.PI * 2);
+                    ctx.strokeStyle = isDep ? '#059669' : (isArr ? '#e11d48' : active.ring);
+                    ctx.lineWidth = (isDep || isArr) ? 3 : 2; ctx.stroke();
+                }
+
+                ctx.beginPath(); ctx.arc(pos.x, pos.y, r, 0, Math.PI * 2);
+                ctx.fillStyle = isDep ? '#059669' : (isArr ? '#e11d48' : (active?.color || '#3b82f6'));
+                ctx.fill();
+
+                ctx.fillStyle = '#ffffff'; ctx.font = 'bold 12px sans-serif';
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText(nom, pos.x, pos.y);
+
+                if (active?.label) {
+                    ctx.fillStyle = active.labelColor || '#334155';
+                    ctx.font = 'bold 11px sans-serif';
+                    ctx.fillText(active.label, pos.x, pos.y - r - 8);
+                }
+            });
+        }
+
+        // Déduction de l'ordre de visite BFS à partir de { pere, niveau } de projet.js
+        function deduireOrdreBFS(pere, niveau) {
+            const ordre = [];
+            const maxNiv = Math.max(...Object.values(niveau));
+            for (let n = 0; n <= maxNiv; n++) {
+                const sommetsNiv = Object.keys(niveau).filter(v => niveau[v] === n);
+                sommetsNiv.sort((a, b) => {
+                    if (pere[a] === pere[b]) return a.localeCompare(b);
+                    return ordre.indexOf(pere[a]) - ordre.indexOf(pere[b]);
+                });
+                ordre.push(...sommetsNiv);
+            }
+            return ordre;
+        }
+
+        // Déduction de l'ordre chronologique de visite DFS
+        function deduireOrdreDFS(depart) {
+            const ordre = [], vu = new Set();
+            function explorer(u) {
+                vu.add(u);
+                ordre.push(u);
+                for (const v of [...graphSansPoids[u]].sort()) {
+                    if (!vu.has(v)) explorer(v);
+                }
+            }
+            explorer(depart);
+            return ordre;
+        }
+
+        // Préparation dynamique des données
+        function preparerParcours(algo, depart) {
+            const isBFS = (algo === 'BFS');
+            let pere, niveau = {}, ordreVisite;
+
+            if (isBFS) {
+                const resBFS = BFS(null, depart);
+                pere = resBFS.pere;
+                niveau = resBFS.niveau;
+                ordreVisite = deduireOrdreBFS(pere, niveau);
+            } else {
+                pere = DFS(null, depart);
+                ordreVisite = deduireOrdreDFS(depart);
+            }
+
+            const activeEdges = new Map(), activeNodes = new Map();
+            const color = isBFS ? '#10b981' : '#8b5cf6';
+            const weightBg = isBFS ? '#ecfdf5' : '#f5f3ff';
+            const weightColor = isBFS ? '#065f46' : '#5b21b6';
+
+            aretes.forEach(([u, v]) => {
+                if (pere[v] === u || pere[u] === v) {
+                    activeEdges.set(getEdgeKey(u, v), { color, width: 4, weightBg, weightColor });
+                }
+            });
+
+            villes.forEach(nom => {
+                const isDep = (nom === depart);
+                const idx = ordreVisite.indexOf(nom) + 1;
+                const niv = isBFS ? niveau[nom] : null;
+                const label = isDep ? `● DÉPART (#1${isBFS ? ' - Niv.0' : ''})` : `#${idx}${isBFS ? ` (Niv.${niv})` : ` (Père: ${pere[nom]})`}`;
+                activeNodes.set(nom, {
+                    color: isDep ? '#059669' : (isBFS ? '#0284c7' : '#7c3aed'),
+                    ring: isDep ? '#059669' : (isBFS ? '#0ea5e9' : '#a78bfa'),
+                    label, labelColor: isDep ? '#059669' : (isBFS ? '#0369a1' : '#6d28d9')
+                });
+            });
+
+            return { activeEdges, activeNodes, resultat: { algo, depart, pere, ordreVisite, niveau } };
+        }
+
+        function preparerDijkstra(depart, arrivee) {
+            const distances = dijkstra(null, depart);
+            const { chemin, cout } = reconstruireChemin(distances, depart, arrivee);
+            const activeEdges = new Map(), activeNodes = new Map();
+
+            for (let i = 0; i < chemin.length - 1; i++) {
+                activeEdges.set(getEdgeKey(chemin[i], chemin[i + 1]), {
+                    color: '#f59e0b', width: 5, weightBg: '#fffbeb', weightColor: '#b45309'
+                });
+            }
+
+            villes.forEach(nom => {
+                const isDep = (nom === depart), isArr = (nom === arrivee), surChemin = chemin.includes(nom);
+                const dist = distances[nom]?.poids;
+                let label = `${dist} km`, color = '#64748b', ring = '#94a3b8', labelColor = '#64748b';
+
+                if (isDep) { label = '● DÉPART (0 km)'; color = ring = labelColor = '#059669'; }
+                else if (isArr) { label = `● ARRIVÉE (${cout} km)`; color = '#e11d48'; ring = labelColor = '#f43f5e'; }
+                else if (surChemin) { label = `Étape (${dist} km)`; color = '#f59e0b'; ring = '#fbbf24'; labelColor = '#b45309'; }
+
+                activeNodes.set(nom, { color, ring, label, labelColor });
+            });
+
+            return { activeEdges, activeNodes, resultat: { algo: 'Dijkstra', depart, arrivee, chemin, cout, distances } };
+        }
+
+        // Rendu du panneau des résultats
+        function afficherPanneauResultat(res) {
+            if (res.algo === 'Dijkstra') {
+                const etapes = res.chemin.map((v, i) => i === 0 ? v : `${res.chemin[i - 1]} ➔ ${v} (${res.distances[v].poids - res.distances[res.chemin[i - 1]].poids} km)`).slice(1);
+                const table = Object.entries(res.distances).sort((a, b) => a[1].poids - b[1].poids).map(([v, d]) => `
+                    <div class="p-2 rounded border text-xs flex justify-between items-center ${v === res.arrivee ? 'bg-rose-100 border-rose-300 text-rose-900 font-bold' : (v === res.depart ? 'bg-emerald-100 border-emerald-300 text-emerald-900 font-bold' : 'bg-white border-slate-200')}">
+                        <span>${v}</span><span class="font-mono font-bold">${d.poids} km</span>
+                    </div>`).join('');
+
+                resultatsDiv.innerHTML = `
+                    <div class="flex flex-wrap items-center justify-between mb-3 pb-2 border-b border-slate-200 gap-2">
+                        <span class="font-bold text-slate-900 text-base">Plus Court Chemin (Dijkstra) : <strong>${res.depart}</strong> ➔ <strong>${res.arrivee}</strong></span>
+                        <span class="text-sm font-bold px-3 py-1 rounded bg-amber-100 text-amber-950 border border-amber-300">Distance totale : ${res.cout} km</span>
+                    </div>
+                    <div class="mb-4 p-3.5 bg-amber-50 rounded-lg border border-amber-200 text-xs">
+                        <div class="font-mono text-base font-extrabold text-amber-950 mb-1">${res.chemin.join(' ➔ ')}</div>
+                        <div class="text-amber-800"><strong>Décomposition :</strong> ${etapes.length > 0 ? `${etapes.join(' + ')} = <strong>${res.cout} km</strong>` : `Départ et arrivée identiques (<strong>0 km</strong>)`}</div>
+                    </div>
+                    <div class="text-xs font-bold text-slate-700 uppercase mb-2">Distances depuis ${res.depart} :</div>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">${table}</div>`;
+            } else {
+                const isBFS = (res.algo === 'BFS');
+                const badgeTheme = isBFS ? 'emerald' : 'purple';
+                const ordreHtml = res.ordreVisite.map((v, i) => `
+                    <span class="inline-flex items-center gap-1 bg-white border border-${badgeTheme}-300 px-2 py-0.5 rounded text-xs">
+                        <span class="w-4 h-4 rounded-full bg-${badgeTheme}-600 text-white text-[10px] flex items-center justify-center font-bold">${i + 1}</span>
+                        <span class="font-semibold">${v}</span>
+                    </span>`).join('<span class="text-slate-400 font-bold">➔</span>');
+
+                resultatsDiv.innerHTML = `
+                    <div class="flex flex-wrap items-center justify-between mb-3 pb-2 border-b border-slate-200 gap-2">
+                        <span class="font-bold text-slate-900 text-base">Parcours ${res.algo} depuis <strong>${res.depart}</strong></span>
+                        <span class="text-xs bg-${badgeTheme}-50 text-${badgeTheme}-800 px-2.5 py-1 rounded border border-${badgeTheme}-200"> </span>
+                    </div>
+                    <div class="mb-3 p-3 bg-${badgeTheme}-50/60 rounded-lg border border-${badgeTheme}-200">
+                        <div class="text-xs font-bold text-${badgeTheme}-950 uppercase mb-2">📋 Ordre de visite chronologique (Consigne 2) :</div>
+                        <div class="flex flex-wrap items-center gap-1.5">${ordreHtml}</div>
+                    </div>
+                    <div class="text-xs font-bold text-slate-700 uppercase mb-2">Relations de parenté (Pères) :</div>
+                    <div class="flex flex-wrap gap-1.5">${res.ordreVisite.map(v => `<span class="bg-white border border-slate-200 px-2 py-0.5 rounded text-xs font-medium">${v} <span class="text-slate-500">(père: ${res.pere[v] || 'racine'})</span></span>`).join('')}</div>`;
+            }
+        }
+
+        // Contrôleur central
+        function mettreAJourVue() {
+            const depart = selectDepart.value, arrivee = selectArrivee.value, algo = selectAlgo.value;
+            containerArrivee.style.opacity = (algo === 'Dijkstra') ? '1' : '0.4';
+            containerArrivee.style.pointerEvents = (algo === 'Dijkstra') ? 'auto' : 'none';
+
+            const config = (algo === 'Dijkstra') ? preparerDijkstra(depart, arrivee) : preparerParcours(algo, depart);
+            dessinerGraphe({ depart, arrivee, activeEdges: config.activeEdges, activeNodes: config.activeNodes });
+            afficherPanneauResultat(config.resultat);
+        }
+
+        // Événements
+        [selectDepart, selectArrivee, selectAlgo].forEach(el => el.addEventListener('change', mettreAJourVue));
+
+        const bindScenario = (btnId, algo, dep, arr) => {
+            document.getElementById(btnId)?.addEventListener('click', () => {
+                selectAlgo.value = algo; selectDepart.value = dep; if (arr) selectArrivee.value = arr;
+                mettreAJourVue();
+            });
+        };
+        bindScenario('btn-sc-dijkstra', 'Dijkstra', 'Bordeaux', 'Lille');
+        bindScenario('btn-sc-bfs', 'BFS', 'Rennes');
+        bindScenario('btn-sc-dfs', 'DFS', 'Rennes');
+        bindScenario('btn-sc-lyon', 'Dijkstra', 'Lyon', 'Nancy');
+
+        // Interaction Canvas
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+            const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+            for (const [nom, pos] of Object.entries(positions)) {
+                if (Math.hypot(x - pos.x, y - pos.y) <= 26) {
+                    if (e.shiftKey || e.altKey) selectArrivee.value = nom;
+                    else selectDepart.value = nom;
+                    mettreAJourVue();
+                    break;
+                }
+            }
+        });
+        canvas.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+            const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+            for (const [nom, pos] of Object.entries(positions)) {
+                if (Math.hypot(x - pos.x, y - pos.y) <= 26) {
+                    selectArrivee.value = nom;
+                    mettreAJourVue();
+                    break;
+                }
+            }
+        });
+
+        // Lancement
+        mettreAJourVue();
+    </script>
+</body>
+</html>
